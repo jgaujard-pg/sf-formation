@@ -1,0 +1,57 @@
+version: '2'
+
+services:
+    nginx:
+        container_name: sf_nginx
+        image: nginx:latest
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ${LOCAL_PROJECT_PATH}/symfony:${CONTAINER_PROJECT_PATH}
+            - ${LOCAL_PROJECT_PATH}.log/nginx/:/var/log/nginx/
+            - ${LOCAL_PROJECT_PATH}docker/app/nginx/run/etc/conf.d/:/etc/nginx/conf.d/
+        links:
+            - php
+    php:
+        container_name: sf_php
+        build:
+          context: ./docker/app/php/
+          dockerfile: ./build/Dockerfile
+        environment:
+            XDEBUG_CONFIG: remote_host=172.17.0.1
+        volumes:
+            - ${LOCAL_PROJECT_PATH}/symfony:${CONTAINER_PROJECT_PATH}
+            - ${LOCAL_PROJECT_PATH}.log/php/:/var/log/php/
+
+    mysql:
+        env_file: .env
+        container_name: sf_mysql
+        image: mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+            - ${LOCAL_PROJECT_PATH}.log/mysql/:/var/log/mysql/
+            - ${LOCAL_PROJECT_PATH}docker/app/mysql/etc/conf.d/:/etc/mysql/conf.d/
+        ports:
+            - "3306:3306"
+
+    phpmyadmin:
+        env_file: .env
+        container_name: sf_phpmyadmin
+        image: phpmyadmin/phpmyadmin
+        environment:
+            PMA_HOST: mysql
+        ports:
+            - "8080:80"
+        links:
+            - mysql
+
+    phpliteadmin:
+        env_file: .env
+        container_name: sf_phpliteadmin
+        image: acttaiwan/phpliteadmin
+        ports:
+            - "2015:2015"
+        volumes:
+            - ${LOCAL_PROJECT_PATH}.data/sqllite/:/db/
